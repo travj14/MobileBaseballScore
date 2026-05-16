@@ -91,6 +91,28 @@ const games: FastifyPluginAsync = async (fastify) => {
     return reply.send({ game, players, state: await enrichState(gameId) })
   })
 
+  fastify.patch<{ Params: { id: string }; Body: { label: string } }>('/games/:id', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['label'],
+        properties: {
+          label: { type: 'string' },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const gameId = parseInt(req.params.id)
+    const game = await db.selectFrom('games').where('id', '=', gameId).selectAll().executeTakeFirst()
+    if (!game) return reply.status(404).send({ error: 'Game not found' })
+
+    const label = req.body.label.trim() || null
+    await db.updateTable('games').set({ label }).where('id', '=', gameId).execute()
+
+    const updated = await db.selectFrom('games').where('id', '=', gameId).selectAll().executeTakeFirstOrThrow()
+    return reply.send(updated)
+  })
+
   fastify.post<{ Params: { id: string }; Body: { playerId: number } }>('/games/:id/players', {
     schema: {
       body: {

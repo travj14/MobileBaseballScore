@@ -272,6 +272,8 @@ const S = {
   sbatterId: '', sbatterData: null,
   spitcherId: '', spitcherData: null,
   smatchup: null,
+  // label editing
+  editingGameId: null, editingLabel: '',
 }
 
 // ═══════════════════════════════════════════════
@@ -305,6 +307,7 @@ const api = {
   statsPitcher: id     => api.get(`/stats/pitcher/${id}`),
   statsMatchup: (b, p) => api.get(`/stats/matchup?batter=${b}&pitcher=${p}`),
   statsGame:  id       => api.get(`/stats/game/${id}`),
+  updateLabel: (id, label) => api.r('PATCH', `/games/${id}`, { label }),
 }
 
 // ═══════════════════════════════════════════════
@@ -405,15 +408,27 @@ function hdr(title, backView, right = '') {
 function vHome() {
   const list = S.games.length === 0
     ? `<div class="empty"><div class="empty-icon">⚾</div>No games yet — start one!</div>`
-    : S.games.map(g => `
-        <div class="game-row" onclick="openGame(${g.id})">
-          <div class="game-info">
-            <div class="game-name">${g.label || 'Game #' + g.id}</div>
-            <div class="game-meta">${fmtDate(g.created_at)}</div>
-          </div>
-          <span class="badge ${g.completed_at ? 'badge-done' : 'badge-live'}">${g.completed_at ? 'Done' : 'Live'}</span>
-          <span class="chevron">›</span>
-        </div>`).join('')
+    : S.games.map(g => {
+        if (S.editingGameId === g.id) {
+          return `
+            <div class="game-row" style="flex-direction:column;align-items:stretch;gap:8px">
+              <input type="text" style="margin-bottom:0" value="${S.editingLabel.replace(/"/g,'&quot;')}" oninput="S.editingLabel=this.value" onkeydown="if(event.key==='Enter')doSaveLabel()" placeholder="Game label (optional)">
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-green btn-sm" style="flex:1;margin:0" onclick="doSaveLabel()">Save</button>
+                <button class="btn btn-grey btn-sm" style="flex:1;margin:0" onclick="S.editingGameId=null;render()">Cancel</button>
+              </div>
+            </div>`
+        }
+        return `
+          <div class="game-row" onclick="openGame(${g.id})">
+            <div class="game-info">
+              <div class="game-name">${g.label || 'Game #' + g.id}</div>
+              <div class="game-meta">${fmtDate(g.created_at)}</div>
+            </div>
+            <span class="badge ${g.completed_at ? 'badge-done' : 'badge-live'}">${g.completed_at ? 'Done' : 'Live'}</span>
+            <button class="btn btn-ghost btn-sm" style="margin:0;padding:6px 10px;flex-shrink:0" onclick="event.stopPropagation();startEditLabel(${g.id})">✎</button>
+          </div>`
+      }).join('')
 
   return hdr('⚾ Baseball Tracker', null,
     `<button class="btn btn-ghost btn-sm" onclick="openStats()">Stats</button>`) + `
@@ -930,6 +945,24 @@ async function doPA(outcome) {
     }
 
     render()
+  } catch (e) { toast(e.message, true) }
+}
+
+function startEditLabel(id) {
+  const game = S.games.find(g => g.id === id)
+  S.editingGameId = id
+  S.editingLabel = game?.label || ''
+  render()
+}
+
+async function doSaveLabel() {
+  try {
+    await api.updateLabel(S.editingGameId, S.editingLabel)
+    S.games = await api.getGames()
+    if (S.game?.id === S.editingGameId) S.game = S.games.find(g => g.id === S.editingGameId) || S.game
+    S.editingGameId = null
+    render()
+    toast('Label updated!')
   } catch (e) { toast(e.message, true) }
 }
 
