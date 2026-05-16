@@ -513,6 +513,7 @@ function vGame() {
           </div>
         </div>
         <div class="diamond-wrap">${diamond(gs)}</div>
+        ${done ? '' : `<button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%" onclick="nextHalf()">Next Half-Inning →</button>`}
       </div>
 
       <!-- Batter / Pitcher -->
@@ -886,6 +887,16 @@ function adjInning(d) {
 }
 function setHalf(h) {
   S.half = h; render()
+}
+function nextHalf() {
+  if (S.half === 'top') {
+    S.half = 'bottom'
+  } else {
+    S.inning++
+    S.half = 'top'
+  }
+  if (S.gs) S.gs = { ...S.gs, outs: 0, first: null, second: null, third: null }
+  render()
 }
 
 async function doPA(outcome) {
