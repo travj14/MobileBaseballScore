@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>⚾ Baseball Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0d1117;
+      --card:       #161b22;
+      --card-hi:    #21262d;
+      --border:     #30363d;
+      --text:       #f0f6fc;
+      --muted:      #8b949e;
+      --green:      #3fb950;
+      --blue:       #58a6ff;
+      --red:        #f85149;
+      --gold:       #ffa657;
+      --purple:     #bc8cff;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      font-size: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #app {
+      max-width: 500px;
+      margin: 0 auto;
+      padding-bottom: 40px;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    .hdr {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 20;
+    }
+    .hdr h1 { flex: 1; font-size: 1.15rem; font-weight: 700; }
+    .back { background: none; border: none; color: var(--blue); font-size: 1rem; cursor: pointer; padding: 4px 0; }
+
+    /* ── Content ─────────────────────────────── */
+    .pg { padding: 16px; }
+
+    /* ── Cards ───────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ── Buttons ─────────────────────────────── */
+    .btn {
+      display: flex; align-items: center; justify-content: center;
+      padding: 14px 18px;
+      border-radius: 9px; border: none;
+      font-size: 1rem; font-weight: 600;
+      cursor: pointer;
+      transition: filter .12s;
+      width: 100%; margin-bottom: 8px;
+    }
+    .btn:active { filter: brightness(.8); }
+    .btn-green  { background: var(--green); color: #000; }
+    .btn-grey   { background: var(--card-hi); color: var(--text); }
+    .btn-red    { background: var(--red); color: #fff; }
+    .btn-ghost  { background: transparent; color: var(--blue); border: 1px solid var(--blue); margin-bottom: 0; }
+    .btn-sm     { padding: 8px 14px; font-size: .875rem; width: auto; margin: 0; }
+
+    /* ── Inputs ──────────────────────────────── */
+    input[type=text], select {
+      width: 100%; padding: 13px 14px;
+      background: var(--card-hi); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 16px;
+      margin-bottom: 10px; outline: none; appearance: none;
+    }
+    input[type=text]:focus, select:focus { border-color: var(--blue); }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%238b949e'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+    /* ── Game list ───────────────────────────── */
+    .game-row {
+      display: flex; align-items: center;
+      padding: 14px 16px; gap: 12px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; margin-bottom: 8px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .game-row:active { border-color: var(--blue); }
+    .game-info { flex: 1; }
+    .game-name  { font-weight: 600; }
+    .game-meta  { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+    .badge {
+      font-size: .7rem; padding: 3px 8px;
+      border-radius: 20px; font-weight: 700;
+    }
+    .badge-live { background: #0d2a0d; color: var(--green); }
+    .badge-done { background: var(--card-hi); color: var(--muted); }
+    .chevron { color: var(--muted); }
+
+    /* ── Player items ────────────────────────── */
+    .player-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 12px;
+      background: var(--card-hi); border-radius: 8px; margin-bottom: 6px;
+    }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--card); display: flex;
+      align-items: center; justify-content: center;
+      font-weight: 700; font-size: .85rem; flex-shrink: 0;
+    }
+
+    /* ── Player checkboxes (new game) ────────── */
+    .pcheck {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; border: 2px solid transparent;
+      border-radius: 9px; margin-bottom: 8px;
+      cursor: pointer; background: var(--card-hi);
+      transition: border-color .15s, background .15s;
+    }
+    .pcheck.on  { border-color: var(--green); background: #0a1f0a; }
+    .pcheck input { width: 18px; height: 18px; accent-color: var(--green); flex-shrink: 0; cursor: pointer; }
+
+    /* ── Inning + Outs bar ───────────────────── */
+    .top-bar {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .inning-ctrl { display: flex; align-items: center; gap: 6px; }
+    .inn-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--card-hi);
+      color: var(--text); font-size: 1.2rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .inn-num { font-size: 1.5rem; font-weight: 700; min-width: 28px; text-align: center; }
+    .half-toggle { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); flex: 1; }
+    .half-opt {
+      flex: 1; padding: 8px 4px; border: none;
+      background: var(--card-hi); color: var(--muted);
+      font-weight: 600; cursor: pointer; font-size: .875rem; transition: background .15s, color .15s;
+    }
+    .half-opt.on { background: var(--blue); color: #fff; }
+    .outs-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .outs-lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    .out-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); }
+    .out-dot.on { background: var(--red); border-color: var(--red); }
+
+    /* ── Baseball diamond ────────────────────── */
+    .diamond-wrap { display: flex; justify-content: center; padding: 4px 0 0; }
+
+    /* ── PA selects ──────────────────────────── */
+    .pa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pa-grid select { margin-bottom: 0; }
+    .sel-lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 5px; }
+
+    /* ── Outcome buttons ─────────────────────── */
+    .out-grid {
+      display: grid; gap: 8px; margin-bottom: 8px;
+    }
+    .cols4 { grid-template-columns: repeat(4,1fr); }
+    .cols3 { grid-template-columns: repeat(3,1fr); }
+    .cols2 { grid-template-columns: repeat(2,1fr); }
+    .obtn {
+      padding: 18px 4px; border-radius: 10px; border: none;
+      font-size: 1.1rem; font-weight: 800; cursor: pointer;
+      transition: filter .1s, transform .1s;
+    }
+    .obtn:active { filter: brightness(.75); transform: scale(.96); }
+    .obtn.hit   { background: var(--green); color: #000; }
+    .obtn.homer { background: var(--gold);  color: #000; }
+    .obtn.walk  { background: var(--blue);  color: #fff; }
+    .obtn.out   { background: var(--red);   color: #fff; }
+    .obtn.hbp   { background: var(--purple);color: #fff; }
+    .sec-lbl {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); margin-bottom: 6px;
+    }
+
+    /* ── PA log ──────────────────────────────── */
+    .pa-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 0; border-bottom: 1px solid var(--border);
+      font-size: .875rem;
+    }
+    .pa-row:last-child { border-bottom: none; }
+    .pa-badge {
+      font-weight: 700; padding: 2px 8px;
+      border-radius: 6px; font-size: .8rem; min-width: 36px; text-align: center;
+    }
+    .pb-hit   { background: #0d2a0d; color: var(--green); }
+    .pb-homer { background: #2a1a00; color: var(--gold); }
+    .pb-walk  { background: #0a1a2e; color: var(--blue); }
+    .pb-hbp   { background: #1a0a2e; color: var(--purple); }
+    .pb-out   { background: #2a0a0a; color: var(--red); }
+
+    /* ── Stats ───────────────────────────────── */
+    .tabs { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; }
+    .tab {
+      padding: 11px 16px; border: none; background: none;
+      color: var(--muted); font-size: .875rem; font-weight: 600;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      white-space: nowrap; transition: color .15s;
+    }
+    .tab.on { color: var(--text); border-bottom-color: var(--blue); }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th { text-align: left; padding: 6px 8px; color: var(--muted); font-size: .7rem; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    .big-stat { font-size: 2rem; font-weight: 800; }
+    .stat-lbl { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+    .stat-row { display: flex; justify-content: space-around; margin-bottom: 16px; }
+
+    /* ── Misc ────────────────────────────────── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .sec-hdr { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 8px; }
+
+    /* ── Toast ───────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 12px 22px; border-radius: 10px; font-weight: 600;
+      font-size: .95rem; z-index: 100; transition: opacity .3s;
+      white-space: nowrap; pointer-events: none;
+    }
+    #toast.hide { opacity: 0; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="hide"></div>
+<script>
+// ═══════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════
+const S = {
+  view: 'home',
+  players: [], games: [],
+  // current game
+  game: null, gs: null, roster: [], recentPas: [],
+  inning: 1, half: 'top',
+  batterId: '', pitcherId: '',
+  // new game
+  ngLabel: '', ngPlayers: new Set(),
+  // stats
+  stab: 'game',
+  sgames: [], sgameId: '',
+  sgameData: null,
+  sbatterId: '', sbatterData: null,
+  spitcherId: '', spitcherData: null,
+  smatchup: null,
+}
+
+// ═══════════════════════════════════════════════
+//  API
+// ═══════════════════════════════════════════════
+const api = {
+  async r(method, path, body) {
+    const res = await fetch('/api/v1' + path, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({ error: 'Request failed' }))
+      throw new Error(e.error || 'Request failed')
+    }
+    return res.json()
+  },
+  get: p => api.r('GET', p),
+  post: (p, b) => api.r('POST', p, b),
+  getPlayers: ()       => api.get('/players'),
+  addPlayer:  n        => api.post('/players', { name: n }),
+  getGames:   ()       => api.get('/games'),
+  newGame:    l        => api.post('/games', { label: l || undefined }),
+  getGame:    id       => api.get(`/games/${id}`),
+  addRoster:  (g, p)   => api.post(`/games/${g}/players`, { playerId: p }),
+  endGame:    id       => api.post(`/games/${id}/complete`, {}),
+  recordPA:   (g, d)   => api.post(`/games/${g}/pa`, d),
+  getPA:      id       => api.get(`/games/${id}/pa`),
+  statsBatter: id      => api.get(`/stats/batter/${id}`),
+  statsPitcher: id     => api.get(`/stats/pitcher/${id}`),
+  statsMatchup: (b, p) => api.get(`/stats/matchup?batter=${b}&pitcher=${p}`),
+  statsGame:  id       => api.get(`/stats/game/${id}`),
+}
+
+// ═══════════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════════
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+}
+function ordinal(n) {
+  const s = ['th','st','nd','rd'], v = n % 100
+  return n + (s[(v-20)%10] || s[v] || s[0])
+}
+function fmtAvg(n) {
+  if (!n && n !== 0) return '—'
+  if (n === 0) return '.000'
+  const s = n.toFixed(3)
+  return n < 1 ? s.slice(1) : s
+}
+function oc(outcome) {
+  if (['1B','2B','3B'].includes(outcome)) return 'hit'
+  if (outcome === 'HR')  return 'homer'
+  if (outcome === 'BB')  return 'walk'
+  if (outcome === 'HBP') return 'hbp'
+  return 'out'
+}
+function paBadge(outcome) {
+  return `<span class="pa-badge pb-${oc(outcome)}">${outcome}</span>`
+}
+
+// ═══════════════════════════════════════════════
+//  Toast
+// ═══════════════════════════════════════════════
+let toastTmr
+function toast(msg, err = false) {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.style.background = err ? '#3a0a0a' : '#0a2a0a'
+  el.style.color       = err ? 'var(--red)' : 'var(--green)'
+  el.style.border      = `1px solid ${err ? 'var(--red)' : 'var(--green)'}`
+  el.className = 'show'
+  clearTimeout(toastTmr)
+  toastTmr = setTimeout(() => { el.className = 'hide' }, 3200)
+}
+
+// ═══════════════════════════════════════════════
+//  Diamond SVG
+// ═══════════════════════════════════════════════
+function diamond(gs) {
+  if (!gs) return ''
+  const { first, second, third, outs } = gs
+
+  function base(cx, cy, runner, label) {
+    const on = runner != null
+    const color = on ? 'var(--green)' : 'var(--card-hi)'
+    const stroke = on ? 'var(--green)' : 'var(--border)'
+    const txt = on
+      ? `<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="#000" font-size="8" font-weight="800" font-family="system-ui">${runner.name.split(' ')[0].slice(0,5)}</text>`
+      : `<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="system-ui">${label}</text>`
+    return `<circle cx="${cx}" cy="${cy}" r="16" fill="${color}" stroke="${stroke}" stroke-width="2"/>${txt}`
+  }
+
+  const dots = [0,1,2].map(i =>
+    `<circle cx="${140 + i*18}" cy="175" r="6" fill="${i < outs ? 'var(--red)' : 'var(--card-hi)'}" stroke="${i < outs ? 'var(--red)' : 'var(--border)'}" stroke-width="1.5"/>`
+  ).join('')
+
+  return `
+    <svg viewBox="0 0 210 190" width="210" height="190" style="display:block">
+      <!-- Diamond lines -->
+      <polygon points="105,168 172,105 105,42 38,105" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+      <!-- Home plate -->
+      <polygon points="105,178 112,171 112,162 98,162 98,171" fill="var(--muted)"/>
+      ${base(172, 105, first,  '1B')}
+      ${base(105,  42, second, '2B')}
+      ${base( 38, 105, third,  '3B')}
+      <!-- Outs -->
+      ${dots}
+      <text x="113" y="179" fill="var(--muted)" font-size="8" font-family="system-ui">OUTS</text>
+    </svg>
+  `
+}
+
+// ═══════════════════════════════════════════════
+//  Render helpers
+// ═══════════════════════════════════════════════
+function hdr(title, backView, right = '') {
+  const back = backView
+    ? `<button class="back" onclick="nav('${backView}')">‹ Back</button>` : ''
+  return `<div class="hdr">${back}<h1>${title}</h1>${right}</div>`
+}
+
+// ═══════════════════════════════════════════════
+//  Views
+// ═══════════════════════════════════════════════
+
+function vHome() {
+  const list = S.games.length === 0
+    ? `<div class="empty"><div class="empty-icon">⚾</div>No games yet — start one!</div>`
+    : S.games.map(g => `
+        <div class="game-row" onclick="openGame(${g.id})">
+          <div class="game-info">
+            <div class="game-name">${g.label || 'Game #' + g.id}</div>
+            <div class="game-meta">${fmtDate(g.created_at)}</div>
+          </div>
+          <span class="badge ${g.completed_at ? 'badge-done' : 'badge-live'}">${g.completed_at ? 'Done' : 'Live'}</span>
+          <span class="chevron">›</span>
+        </div>`).join('')
+
+  return hdr('⚾ Baseball Tracker', null,
+    `<button class="btn btn-ghost btn-sm" onclick="openStats()">Stats</button>`) + `
+    <div class="pg">
+      <button class="btn btn-green" onclick="nav('newgame')">+ New Game</button>
+      <button class="btn btn-grey"  onclick="nav('players')">Manage Players</button>
+      <div class="sec-hdr">Games</div>
+      ${list}
+    </div>`
+}
+
+function vPlayers() {
+  const list = S.players.map(p => `
+    <div class="player-row">
+      <div class="avatar">${initials(p.name)}</div>
+      <span>${p.name}</span>
+    </div>`).join('')
+
+  return hdr('Players', 'home') + `
+    <div class="pg">
+      <div class="card">
+        <div class="card-label">Add Player</div>
+        <input type="text" id="pname" placeholder="Player name" onkeydown="if(event.key==='Enter')doAddPlayer()">
+        <button class="btn btn-green" onclick="doAddPlayer()">Add Player</button>
+      </div>
+      <div class="sec-hdr">All Players (${S.players.length})</div>
+      ${S.players.length ? list : '<div class="empty"><div class="empty-icon">👤</div>No players yet</div>'}
+    </div>`
+}
+
+function vNewGame() {
+  const plist = S.players.map(p => {
+    const on = S.ngPlayers.has(p.id)
+    return `
+      <div class="pcheck ${on ? 'on' : ''}" onclick="toggleNgPlayer(${p.id})">
+        <input type="checkbox" ${on ? 'checked' : ''} onclick="event.stopPropagation(); toggleNgPlayer(${p.id})">
+        <div class="avatar">${initials(p.name)}</div>
+        <span>${p.name}</span>
+      </div>`
+  }).join('')
+
+  const canStart = S.ngPlayers.size >= 2
+  return hdr('New Game', 'home') + `
+    <div class="pg">
+      <div class="card">
+        <div class="card-label">Game Label (optional)</div>
+        <input type="text" id="glabel" placeholder="e.g. Memorial Day 2026" value="${S.ngLabel}">
+      </div>
+      <div class="sec-hdr">Select Players (pick ≥ 2)</div>
+      ${S.players.length
+        ? plist
+        : '<div class="empty">Add players first from the home screen</div>'}
+      <br>
+      <button class="btn btn-green" onclick="doStartGame()"
+        ${canStart ? '' : 'disabled style="opacity:.45"'}>
+        Start Game${S.ngPlayers.size >= 2 ? ` (${S.ngPlayers.size} players)` : ''}
+      </button>
+    </div>`
+}
+
+function vGame() {
+  if (!S.game) return '<div class="pg">Loading...</div>'
+  const g = S.game
+  const gs = S.gs
+
+  const rosterOpts = S.roster.map(p =>
+    `<option value="${p.id}" ${S.batterId == p.id ? 'selected' : ''}>${p.name}</option>`).join('')
+  const rosterOptsP = S.roster.map(p =>
+    `<option value="${p.id}" ${S.pitcherId == p.id ? 'selected' : ''}>${p.name}</option>`).join('')
+
+  const pasHtml = S.recentPas.length === 0
+    ? '<div style="color:var(--muted);font-size:.875rem;padding:4px 0">No plate appearances yet</div>'
+    : [...S.recentPas].reverse().map(pa => `
+        <div class="pa-row">
+          ${paBadge(pa.outcome)}
+          <span style="flex:1"><strong>${pa.batter_name}</strong> <span style="color:var(--muted)">vs ${pa.pitcher_name}</span></span>
+          <span style="color:var(--muted);font-size:.75rem">${ordinal(pa.inning)}${pa.inning_half === 'top' ? '▲' : '▼'}</span>
+        </div>`).join('')
+
+  const done = !!g.completed_at
+  const statBtn = `<button class="btn btn-ghost btn-sm" onclick="openStats(${g.id})">Stats</button>`
+
+  return hdr(g.label || 'Game #' + g.id, 'home', statBtn) + `
+    <div class="pg">
+
+      <!-- Inning + diamond card -->
+      <div class="card">
+        <div class="top-bar" style="margin-bottom:12px">
+          <div class="inning-ctrl">
+            <button class="inn-btn" onclick="adjInning(-1)">−</button>
+            <span class="inn-num">${S.inning}</span>
+            <button class="inn-btn" onclick="adjInning(1)">+</button>
+          </div>
+          <div class="half-toggle">
+            <button class="half-opt ${S.half==='top'?'on':''}" onclick="setHalf('top')">▲ Top</button>
+            <button class="half-opt ${S.half==='bottom'?'on':''}" onclick="setHalf('bottom')">▼ Bot</button>
+          </div>
+        </div>
+        <div class="diamond-wrap">${diamond(gs)}</div>
+      </div>
+
+      <!-- Batter / Pitcher -->
+      <div class="card">
+        <div class="pa-grid">
+          <div>
+            <div class="sel-lbl">⚔ Batter</div>
+            <select id="selB" onchange="S.batterId=this.value">
+              <option value="">Select...</option>${rosterOpts}
+            </select>
+          </div>
+          <div>
+            <div class="sel-lbl">⚡ Pitcher</div>
+            <select id="selP" onchange="S.pitcherId=this.value">
+              <option value="">Select...</option>${rosterOptsP}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outcome buttons -->
+      ${done ? '' : `
+      <div class="card">
+        <div class="card-label">Record Outcome</div>
+
+        <div class="sec-lbl">Hits</div>
+        <div class="out-grid cols4">
+          <button class="obtn hit"   onclick="doPA('1B')">1B</button>
+          <button class="obtn hit"   onclick="doPA('2B')">2B</button>
+          <button class="obtn hit"   onclick="doPA('3B')">3B</button>
+          <button class="obtn homer" onclick="doPA('HR')">HR</button>
+        </div>
+
+        <div class="sec-lbl">On Base</div>
+        <div class="out-grid cols2">
+          <button class="obtn walk" onclick="doPA('BB')">BB</button>
+          <button class="obtn hbp"  onclick="doPA('HBP')">HBP</button>
+        </div>
+
+        <div class="sec-lbl">Outs</div>
+        <div class="out-grid cols3">
+          <button class="obtn out" onclick="doPA('K')">K</button>
+          <button class="obtn out" onclick="doPA('GO')">GO</button>
+          <button class="obtn out" onclick="doPA('PO')">PO</button>
+        </div>
+      </div>`}
+
+      <!-- Recent PAs -->
+      <div class="card">
+        <div class="card-label">Recent Plate Appearances</div>
+        ${pasHtml}
+      </div>
+
+      ${done
+        ? `<div style="text-align:center;color:var(--muted);padding:8px">Game completed ${fmtDate(g.completed_at)}</div>`
+        : `<button class="btn btn-red" onclick="doEndGame()">End Game</button>`}
+    </div>`
+}
+
+function vStats() {
+  const tabs = ['game','batter','pitcher','matchup']
+  const labels = { game:'Game', batter:'Batter', pitcher:'Pitcher', matchup:'Matchup' }
+  const tabHtml = tabs.map(t =>
+    `<button class="tab ${S.stab===t?'on':''}" onclick="setSTab('${t}')">${labels[t]}</button>`
+  ).join('')
+
+  let body = ''
+
+  if (S.stab === 'game') {
+    const gopts = S.sgames.map(g =>
+      `<option value="${g.id}" ${S.sgameId==g.id?'selected':''}>${g.label||'Game #'+g.id} — ${fmtDate(g.created_at)}</option>`
+    ).join('')
+
+    let table = ''
+    if (S.sgameData && S.sgameData.players) {
+      table = `
+        <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>Player</th><th>R</th><th>PA</th><th>H</th>
+            <th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>K</th><th>AVG</th><th>OBP</th>
+          </tr></thead>
+          <tbody>
+            ${S.sgameData.players.map(p => `<tr>
+              <td><strong>${p.player.name}</strong></td>
+              <td style="color:var(--gold);font-weight:700">${p.runs}</td>
+              <td>${p.batting.pa}</td>
+              <td>${p.batting.h}</td>
+              <td>${p.batting.doubles}</td>
+              <td>${p.batting.triples}</td>
+              <td>${p.batting.hr}</td>
+              <td>${p.batting.bb}</td>
+              <td>${p.batting.k}</td>
+              <td style="font-weight:700">${fmtAvg(p.batting.avg)}</td>
+              <td>${fmtAvg(p.batting.obp)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        </div>`
+    }
+
+    body = `
+      <select onchange="S.sgameId=this.value;loadSGame()">
+        <option value="">Pick a game…</option>${gopts}
+      </select>
+      ${table}`
+
+  } else if (S.stab === 'batter') {
+    const opts = S.players.map(p =>
+      `<option value="${p.id}" ${S.sbatterId==p.id?'selected':''}>${p.name}</option>`).join('')
+
+    let card = ''
+    if (S.sbatterData) {
+      const b = S.sbatterData.batting
+      card = `
+        <div class="card">
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat">${fmtAvg(b.avg)}</div><div class="stat-lbl">AVG</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--gold)">${S.sbatterData.runs}</div><div class="stat-lbl">RUNS</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat">${fmtAvg(b.slg)}</div><div class="stat-lbl">SLG</div>
+            </div>
+          </div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>PA</th><th>AB</th><th>H</th><th>1B</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>HBP</th><th>K</th><th>GO</th><th>PO</th></tr></thead>
+            <tbody><tr>
+              <td>${b.pa}</td><td>${b.ab}</td><td>${b.h}</td>
+              <td>${b.singles}</td><td>${b.doubles}</td><td>${b.triples}</td><td>${b.hr}</td>
+              <td>${b.bb}</td><td>${b.hbp}</td><td>${b.k}</td><td>${b.go}</td><td>${b.po}</td>
+            </tr></tbody>
+          </table></div>
+        </div>`
+    }
+
+    body = `
+      <select onchange="S.sbatterId=this.value;loadSBatter()">
+        <option value="">Pick a player…</option>${opts}
+      </select>
+      ${card}`
+
+  } else if (S.stab === 'pitcher') {
+    const opts = S.players.map(p =>
+      `<option value="${p.id}" ${S.spitcherId==p.id?'selected':''}>${p.name}</option>`).join('')
+
+    let card = ''
+    if (S.spitcherData) {
+      const p = S.spitcherData.pitching
+      card = `
+        <div class="card">
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat">${p.bf}</div><div class="stat-lbl">BF</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--red)">${S.spitcherData.runsAllowed}</div><div class="stat-lbl">Runs Allowed</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--green)">${p.k}</div><div class="stat-lbl">K</div>
+            </div>
+          </div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>H</th><th>HR</th><th>BB</th><th>HBP</th><th>GO</th><th>PO</th></tr></thead>
+            <tbody><tr>
+              <td>${p.h}</td><td>${p.hr}</td><td>${p.bb}</td><td>${p.hbp}</td><td>${p.go}</td><td>${p.po}</td>
+            </tr></tbody>
+          </table></div>
+        </div>`
+    }
+
+    body = `
+      <select onchange="S.spitcherId=this.value;loadSPitcher()">
+        <option value="">Pick a player…</option>${opts}
+      </select>
+      ${card}`
+
+  } else if (S.stab === 'matchup') {
+    const bopts = S.players.map(p =>
+      `<option value="${p.id}" ${S.sbatterId==p.id?'selected':''}>${p.name}</option>`).join('')
+    const popts = S.players.map(p =>
+      `<option value="${p.id}" ${S.spitcherId==p.id?'selected':''}>${p.name}</option>`).join('')
+
+    let card = ''
+    if (S.smatchup) {
+      const b = S.smatchup.batting
+      card = `
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <strong>${S.smatchup.batter.name}</strong>
+            <span style="color:var(--muted)">vs</span>
+            <strong>${S.smatchup.pitcher.name}</strong>
+          </div>
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat">${fmtAvg(b.avg)}</div><div class="stat-lbl">AVG</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat">${b.pa}</div><div class="stat-lbl">PA</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--gold)">${S.smatchup.runs}</div><div class="stat-lbl">Runs</div>
+            </div>
+          </div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>H</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>HBP</th><th>K</th><th>GO</th><th>PO</th></tr></thead>
+            <tbody><tr>
+              <td>${b.h}</td><td>${b.doubles}</td><td>${b.triples}</td><td>${b.hr}</td>
+              <td>${b.bb}</td><td>${b.hbp}</td><td>${b.k}</td><td>${b.go}</td><td>${b.po}</td>
+            </tr></tbody>
+          </table></div>
+        </div>`
+    }
+
+    body = `
+      <div class="pa-grid" style="margin-bottom:10px">
+        <div>
+          <div class="sel-lbl">Batter</div>
+          <select onchange="S.sbatterId=this.value;loadSMatchup()">
+            <option value="">Select…</option>${bopts}
+          </select>
+        </div>
+        <div>
+          <div class="sel-lbl">Pitcher</div>
+          <select onchange="S.spitcherId=this.value;loadSMatchup()">
+            <option value="">Select…</option>${popts}
+          </select>
+        </div>
+      </div>
+      ${card}`
+  }
+
+  return hdr('Stats', 'home') +
+    `<div class="tabs">${tabHtml}</div>` +
+    `<div class="pg" style="padding-top:12px">${body}</div>`
+}
+
+// ═══════════════════════════════════════════════
+//  Actions
+// ═══════════════════════════════════════════════
+
+async function doAddPlayer() {
+  const inp = document.getElementById('pname')
+  const name = inp?.value?.trim()
+  if (!name) return
+  try {
+    await api.addPlayer(name)
+    inp.value = ''
+    S.players = await api.getPlayers()
+    render()
+    toast('Player added!')
+  } catch (e) { toast(e.message, true) }
+}
+
+function toggleNgPlayer(id) {
+  S.ngPlayers.has(id) ? S.ngPlayers.delete(id) : S.ngPlayers.add(id)
+  render()
+}
+
+async function doStartGame() {
+  const label = document.getElementById('glabel')?.value?.trim()
+  S.ngLabel = label
+  if (S.ngPlayers.size < 2) { toast('Select at least 2 players', true); return }
+  try {
+    const { game } = await api.newGame(label)
+    for (const pid of S.ngPlayers) await api.addRoster(game.id, pid)
+    S.ngPlayers = new Set(); S.ngLabel = ''
+    S.games = await api.getGames()
+    await openGame(game.id)
+  } catch (e) { toast(e.message, true) }
+}
+
+async function openGame(id) {
+  try {
+    const data = await api.getGame(id)
+    S.game  = data.game
+    S.gs    = data.state
+    S.roster = data.players
+    S.recentPas = (await api.getPA(id)).slice(-8)
+    if (data.state) { S.inning = data.state.inning; S.half = data.state.half }
+    nav('game')
+  } catch (e) { toast(e.message, true) }
+}
+
+function adjInning(d) {
+  S.inning = Math.max(1, S.inning + d); render()
+}
+function setHalf(h) {
+  S.half = h; render()
+}
+
+async function doPA(outcome) {
+  const batterId  = parseInt(document.getElementById('selB')?.value || S.batterId)
+  const pitcherId = parseInt(document.getElementById('selP')?.value || S.pitcherId)
+
+  if (!batterId || !pitcherId)         { toast('Select batter and pitcher first', true); return }
+  if (batterId === pitcherId)          { toast('Batter and pitcher must differ', true); return }
+
+  S.batterId  = String(batterId)
+  S.pitcherId = String(pitcherId)
+
+  try {
+    const result = await api.recordPA(S.game.id, {
+      batterId, pitcherId,
+      inning: S.inning, inningHalf: S.half, outcome,
+    })
+
+    S.gs = result.gameState
+    S.recentPas = (await api.getPA(S.game.id)).slice(-8)
+
+    // Toast feedback
+    if (result.runsScored?.length) {
+      const who = result.runsScored.map(p => p.name).join(' & ')
+      const msg = outcome === 'HR'
+        ? (result.runsScored.length >= 4 ? '💥 GRAND SLAM!' : `💥 HOME RUN! ${who} score${result.runsScored.length > 1 ? '' : 's'}!`)
+        : `🏃 ${who} score${result.runsScored.length === 1 ? 's' : ''}!`
+      toast(msg)
+    } else if (['K','GO','PO'].includes(outcome) && result.gameState.outs === 0) {
+      toast('⚡ 3 outs — side retired!')
+    }
+
+    render()
+  } catch (e) { toast(e.message, true) }
+}
+
+async function doEndGame() {
+  if (!confirm('End this game?')) return
+  try {
+    S.game = await api.endGame(S.game.id)
+    S.games = await api.getGames()
+    render()
+    toast('Game ended!')
+  } catch (e) { toast(e.message, true) }
+}
+
+async function openStats(gameId) {
+  S.stab = gameId ? 'game' : 'game'
+  S.sgameId = gameId ? String(gameId) : ''
+  S.sgameData = null; S.sbatterData = null; S.spitcherData = null; S.smatchup = null
+  S.sgames = await api.getGames()
+  S.players = await api.getPlayers()
+  if (gameId) await loadSGame()
+  nav('stats')
+}
+
+async function setSTab(t) {
+  S.stab = t
+  S.sgameData = null; S.sbatterData = null; S.spitcherData = null; S.smatchup = null
+  render()
+}
+
+async function loadSGame() {
+  if (!S.sgameId) { render(); return }
+  try { S.sgameData = await api.statsGame(S.sgameId); render() }
+  catch (e) { toast(e.message, true) }
+}
+async function loadSBatter() {
+  if (!S.sbatterId) { render(); return }
+  try { S.sbatterData = await api.statsBatter(S.sbatterId); render() }
+  catch (e) { toast(e.message, true) }
+}
+async function loadSPitcher() {
+  if (!S.spitcherId) { render(); return }
+  try { S.spitcherData = await api.statsPitcher(S.spitcherId); render() }
+  catch (e) { toast(e.message, true) }
+}
+async function loadSMatchup() {
+  if (!S.sbatterId || !S.spitcherId || S.sbatterId === S.spitcherId) { render(); return }
+  try { S.smatchup = await api.statsMatchup(S.sbatterId, S.spitcherId); render() }
+  catch (e) { toast(e.message, true) }
+}
+
+// ═══════════════════════════════════════════════
+//  Router + Render
+// ═══════════════════════════════════════════════
+function nav(view) { S.view = view; render() }
+
+function render() {
+  const el = document.getElementById('app')
+  switch (S.view) {
+    case 'home':    el.innerHTML = vHome(); break
+    case 'players': el.innerHTML = vPlayers(); break
+    case 'newgame': el.innerHTML = vNewGame(); break
+    case 'game':    el.innerHTML = vGame(); break
+    case 'stats':   el.innerHTML = vStats(); break
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════
+async function init() {
+  try {
+    [S.players, S.games] = await Promise.all([api.getPlayers(), api.getGames()])
+  } catch(e) { console.error('Init failed', e) }
+  render()
+}
+init()
+</script>
+</body>
+</html>
