@@ -690,10 +690,21 @@ function vStats() {
               <div class="big-stat" style="color:var(--red)">${fmtEra(S.spitcherData.era)}</div><div class="stat-lbl">ERA</div>
             </div>
             <div style="text-align:center">
-              <div class="big-stat">${S.spitcherData.runsAllowed}</div><div class="stat-lbl">Runs Allowed</div>
+              <div class="big-stat" style="color:var(--gold)">${fmtEra(p.fip)}</div><div class="stat-lbl">FIP</div>
             </div>
             <div style="text-align:center">
-              <div class="big-stat" style="color:var(--green)">${p.k}</div><div class="stat-lbl">K</div>
+              <div class="big-stat">${S.spitcherData.runsAllowed}</div><div class="stat-lbl">Runs Allowed</div>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--green)">${p.kPct}%</div><div class="stat-lbl">K%</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--red)">${p.bbPct}%</div><div class="stat-lbl">BB%</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--blue)">${p.kBbPct}%</div><div class="stat-lbl">K-BB%</div>
             </div>
           </div>
           <div class="card-label" style="margin-top:4px">Against</div>
@@ -714,9 +725,9 @@ function vStats() {
             </div>
           </div>
           <div style="overflow-x:auto"><table>
-            <thead><tr><th>BF</th><th>H</th><th>HR</th><th>BB</th><th>HBP</th><th>GO</th><th>PO</th></tr></thead>
+            <thead><tr><th>BF</th><th>K</th><th>H</th><th>HR</th><th>BB</th><th>HBP</th><th>GO</th><th>PO</th></tr></thead>
             <tbody><tr>
-              <td>${p.bf}</td><td>${p.h}</td><td>${p.hr}</td><td>${p.bb}</td><td>${p.hbp}</td><td>${p.go}</td><td>${p.po}</td>
+              <td>${p.bf}</td><td>${p.k}</td><td>${p.h}</td><td>${p.hr}</td><td>${p.bb}</td><td>${p.hbp}</td><td>${p.go}</td><td>${p.po}</td>
             </tr></tbody>
           </table></div>
         </div>`
@@ -773,10 +784,21 @@ function vStats() {
               <div class="big-stat" style="color:var(--red)">${fmtEra(S.smatchup.era)}</div><div class="stat-lbl">ERA</div>
             </div>
             <div style="text-align:center">
-              <div class="big-stat">${b.pa}</div><div class="stat-lbl">BF</div>
+              <div class="big-stat" style="color:var(--gold)">${fmtEra(S.smatchup.pitching.fip)}</div><div class="stat-lbl">FIP</div>
             </div>
             <div style="text-align:center">
-              <div class="big-stat">${S.smatchup.pitching.k}</div><div class="stat-lbl">K</div>
+              <div class="big-stat">${b.pa}</div><div class="stat-lbl">BF</div>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--green)">${S.smatchup.pitching.kPct}%</div><div class="stat-lbl">K%</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--red)">${S.smatchup.pitching.bbPct}%</div><div class="stat-lbl">BB%</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--blue)">${S.smatchup.pitching.kBbPct}%</div><div class="stat-lbl">K-BB%</div>
             </div>
           </div>
           <div style="overflow-x:auto"><table>

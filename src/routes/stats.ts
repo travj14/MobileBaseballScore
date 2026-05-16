@@ -43,7 +43,12 @@ function pitcherStats(pas: PaRow[]) {
   const obp = bf > 0 ? +((h + bb + hbp) / bf).toFixed(3) : 0
   const slg = ab > 0 ? +(tb / ab).toFixed(3) : 0
   const ops = +(obp + slg).toFixed(3)
-  return { bf, h, bb, hbp, k, hr, go, po, outs, avg, obp, slg, ops }
+  const kPct  = bf > 0 ? +(k  / bf * 100).toFixed(1) : 0
+  const bbPct = bf > 0 ? +(bb / bf * 100).toFixed(1) : 0
+  const kBbPct = +(kPct - bbPct).toFixed(1)
+  const ip = outs / 3
+  const fip = ip > 0 ? +((13 * hr + 3 * (bb + hbp) - 2 * k) / ip + 3.10).toFixed(2) : null
+  return { bf, h, bb, hbp, k, hr, go, po, outs, avg, obp, slg, ops, kPct, bbPct, kBbPct, fip }
 }
 
 function era(runsAllowed: number, outs: number): number | null {
