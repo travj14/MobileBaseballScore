@@ -572,6 +572,13 @@ function vGame() {
     </div>`
 }
 
+function fmtEra(e) {
+  return e == null ? '—' : e.toFixed(2)
+}
+function fmtR9(r) {
+  return r == null || r === 0 ? '—' : r.toFixed(2)
+}
+
 function vStats() {
   const tabs = ['game','batter','pitcher','matchup']
   const labels = { game:'Game', batter:'Batter', pitcher:'Pitcher', matchup:'Matchup' }
@@ -592,22 +599,23 @@ function vStats() {
         <div style="overflow-x:auto">
         <table>
           <thead><tr>
-            <th>Player</th><th>R</th><th>PA</th><th>H</th>
-            <th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>K</th><th>AVG</th><th>OBP</th>
+            <th>Player</th><th>R</th><th>R/9</th><th>PA</th><th>H</th>
+            <th>HR</th><th>BB</th><th>K</th><th>AVG</th><th>OBP</th><th>SLG</th><th>OPS</th>
           </tr></thead>
           <tbody>
             ${S.sgameData.players.map(p => `<tr>
               <td><strong>${p.player.name}</strong></td>
               <td style="color:var(--gold);font-weight:700">${p.runs}</td>
+              <td style="color:var(--muted)">${fmtR9(p.r9)}</td>
               <td>${p.batting.pa}</td>
               <td>${p.batting.h}</td>
-              <td>${p.batting.doubles}</td>
-              <td>${p.batting.triples}</td>
               <td>${p.batting.hr}</td>
               <td>${p.batting.bb}</td>
               <td>${p.batting.k}</td>
               <td style="font-weight:700">${fmtAvg(p.batting.avg)}</td>
               <td>${fmtAvg(p.batting.obp)}</td>
+              <td>${fmtAvg(p.batting.slg)}</td>
+              <td style="font-weight:700;color:var(--blue)">${fmtAvg(p.batting.ops)}</td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -634,10 +642,21 @@ function vStats() {
               <div class="big-stat">${fmtAvg(b.avg)}</div><div class="stat-lbl">AVG</div>
             </div>
             <div style="text-align:center">
-              <div class="big-stat" style="color:var(--gold)">${S.sbatterData.runs}</div><div class="stat-lbl">RUNS</div>
+              <div class="big-stat">${fmtAvg(b.obp)}</div><div class="stat-lbl">OBP</div>
             </div>
             <div style="text-align:center">
               <div class="big-stat">${fmtAvg(b.slg)}</div><div class="stat-lbl">SLG</div>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--blue)">${fmtAvg(b.ops)}</div><div class="stat-lbl">OPS</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--gold)">${S.sbatterData.runs}</div><div class="stat-lbl">RUNS</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--green)">${fmtR9(S.sbatterData.r9)}</div><div class="stat-lbl">R/9</div>
             </div>
           </div>
           <div style="overflow-x:auto"><table>
@@ -668,19 +687,36 @@ function vStats() {
         <div class="card">
           <div class="stat-row">
             <div style="text-align:center">
-              <div class="big-stat">${p.bf}</div><div class="stat-lbl">BF</div>
+              <div class="big-stat" style="color:var(--red)">${fmtEra(S.spitcherData.era)}</div><div class="stat-lbl">ERA</div>
             </div>
             <div style="text-align:center">
-              <div class="big-stat" style="color:var(--red)">${S.spitcherData.runsAllowed}</div><div class="stat-lbl">Runs Allowed</div>
+              <div class="big-stat">${S.spitcherData.runsAllowed}</div><div class="stat-lbl">Runs Allowed</div>
             </div>
             <div style="text-align:center">
               <div class="big-stat" style="color:var(--green)">${p.k}</div><div class="stat-lbl">K</div>
             </div>
           </div>
+          <div class="card-label" style="margin-top:4px">Against</div>
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat">${fmtAvg(p.avg)}</div><div class="stat-lbl">AVG</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat">${fmtAvg(p.obp)}</div><div class="stat-lbl">OBP</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat">${fmtAvg(p.slg)}</div><div class="stat-lbl">SLG</div>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--blue)">${fmtAvg(p.ops)}</div><div class="stat-lbl">OPS</div>
+            </div>
+          </div>
           <div style="overflow-x:auto"><table>
-            <thead><tr><th>H</th><th>HR</th><th>BB</th><th>HBP</th><th>GO</th><th>PO</th></tr></thead>
+            <thead><tr><th>BF</th><th>H</th><th>HR</th><th>BB</th><th>HBP</th><th>GO</th><th>PO</th></tr></thead>
             <tbody><tr>
-              <td>${p.h}</td><td>${p.hr}</td><td>${p.bb}</td><td>${p.hbp}</td><td>${p.go}</td><td>${p.po}</td>
+              <td>${p.bf}</td><td>${p.h}</td><td>${p.hr}</td><td>${p.bb}</td><td>${p.hbp}</td><td>${p.go}</td><td>${p.po}</td>
             </tr></tbody>
           </table></div>
         </div>`
@@ -708,15 +744,39 @@ function vStats() {
             <span style="color:var(--muted)">vs</span>
             <strong>${S.smatchup.pitcher.name}</strong>
           </div>
+          <div class="card-label">Batting</div>
           <div class="stat-row">
             <div style="text-align:center">
               <div class="big-stat">${fmtAvg(b.avg)}</div><div class="stat-lbl">AVG</div>
             </div>
             <div style="text-align:center">
-              <div class="big-stat">${b.pa}</div><div class="stat-lbl">PA</div>
+              <div class="big-stat">${fmtAvg(b.obp)}</div><div class="stat-lbl">OBP</div>
             </div>
             <div style="text-align:center">
-              <div class="big-stat" style="color:var(--gold)">${S.smatchup.runs}</div><div class="stat-lbl">Runs</div>
+              <div class="big-stat">${fmtAvg(b.slg)}</div><div class="stat-lbl">SLG</div>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--blue)">${fmtAvg(b.ops)}</div><div class="stat-lbl">OPS</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--gold)">${S.smatchup.runs}</div><div class="stat-lbl">RUNS</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--green)">${fmtR9(S.smatchup.r9)}</div><div class="stat-lbl">R/9</div>
+            </div>
+          </div>
+          <div class="card-label" style="margin-top:4px">Pitching (${S.smatchup.pitcher.name})</div>
+          <div class="stat-row">
+            <div style="text-align:center">
+              <div class="big-stat" style="color:var(--red)">${fmtEra(S.smatchup.era)}</div><div class="stat-lbl">ERA</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat">${b.pa}</div><div class="stat-lbl">BF</div>
+            </div>
+            <div style="text-align:center">
+              <div class="big-stat">${S.smatchup.pitching.k}</div><div class="stat-lbl">K</div>
             </div>
           </div>
           <div style="overflow-x:auto"><table>
@@ -862,6 +922,7 @@ async function openStats(gameId) {
 
 async function setSTab(t) {
   S.stab = t
+  S.sgameId = ''; S.sbatterId = ''; S.spitcherId = ''
   S.sgameData = null; S.sbatterData = null; S.spitcherData = null; S.smatchup = null
   render()
 }

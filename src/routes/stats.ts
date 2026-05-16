@@ -17,24 +17,37 @@ function batterStats(pas: PaRow[]) {
   const po = pas.filter((p) => p.outcome === 'PO').length
   const ab = pa - bb - hbp
   const tb = singles + doubles * 2 + triples * 3 + hr * 4
-  return {
-    pa, ab, h, singles, doubles, triples, hr, bb, hbp, k, go, po,
-    avg: ab > 0 ? +(h / ab).toFixed(3) : 0,
-    slg: ab > 0 ? +(tb / ab).toFixed(3) : 0,
-    obp: pa > 0 ? +((h + bb + hbp) / pa).toFixed(3) : 0,
-  }
+  const avg = ab > 0 ? +(h / ab).toFixed(3) : 0
+  const slg = ab > 0 ? +(tb / ab).toFixed(3) : 0
+  const obp = pa > 0 ? +((h + bb + hbp) / pa).toFixed(3) : 0
+  const ops = +(obp + slg).toFixed(3)
+  return { pa, ab, h, singles, doubles, triples, hr, bb, hbp, k, go, po, avg, slg, obp, ops }
 }
 
 function pitcherStats(pas: PaRow[]) {
   const bf = pas.length
   const h = pas.filter((p) => ['1B', '2B', '3B', 'HR'].includes(p.outcome)).length
+  const singles = pas.filter((p) => p.outcome === '1B').length
+  const doubles = pas.filter((p) => p.outcome === '2B').length
+  const triples = pas.filter((p) => p.outcome === '3B').length
+  const hr = pas.filter((p) => p.outcome === 'HR').length
   const bb = pas.filter((p) => p.outcome === 'BB').length
   const hbp = pas.filter((p) => p.outcome === 'HBP').length
   const k = pas.filter((p) => p.outcome === 'K').length
-  const hr = pas.filter((p) => p.outcome === 'HR').length
   const go = pas.filter((p) => p.outcome === 'GO').length
   const po = pas.filter((p) => p.outcome === 'PO').length
-  return { bf, h, bb, hbp, k, hr, go, po }
+  const outs = k + go + po
+  const ab = bf - bb - hbp
+  const tb = singles + doubles * 2 + triples * 3 + hr * 4
+  const avg = ab > 0 ? +(h / ab).toFixed(3) : 0
+  const obp = bf > 0 ? +((h + bb + hbp) / bf).toFixed(3) : 0
+  const slg = ab > 0 ? +(tb / ab).toFixed(3) : 0
+  const ops = +(obp + slg).toFixed(3)
+  return { bf, h, bb, hbp, k, hr, go, po, outs, avg, obp, slg, ops }
+}
+
+function era(runsAllowed: number, outs: number): number | null {
+  return outs > 0 ? +((runsAllowed * 27) / outs).toFixed(2) : null
 }
 
 const stats: FastifyPluginAsync = async (fastify) => {
@@ -56,11 +69,10 @@ const stats: FastifyPluginAsync = async (fastify) => {
       .select((eb) => eb.fn.countAll<number>().as('count'))
       .executeTakeFirst()
 
-    return reply.send({
-      player,
-      batting: batterStats(pas),
-      runs: Number(runs?.count ?? 0),
-    })
+    const runsScored = Number(runs?.count ?? 0)
+    const batting = batterStats(pas)
+    const r9 = batting.pa > 0 ? +((runsScored * 9) / batting.pa).toFixed(2) : 0
+    return reply.send({ player, batting, runs: runsScored, r9 })
   })
 
   // Career stats for a pitcher
@@ -82,11 +94,9 @@ const stats: FastifyPluginAsync = async (fastify) => {
       .select((eb) => eb.fn.countAll<number>().as('count'))
       .executeTakeFirst()
 
-    return reply.send({
-      player,
-      pitching: pitcherStats(pas),
-      runsAllowed: Number(runsAllowed?.count ?? 0),
-    })
+    const pitching = pitcherStats(pas)
+    const ra = Number(runsAllowed?.count ?? 0)
+    return reply.send({ player, pitching, runsAllowed: ra, era: era(ra, pitching.outs) })
   })
 
   // Batter vs pitcher matchup
@@ -128,11 +138,15 @@ const stats: FastifyPluginAsync = async (fastify) => {
       .select((eb) => eb.fn.countAll<number>().as('count'))
       .executeTakeFirst()
 
+    const runsScored = Number(runs?.count ?? 0)
+    const batting = batterStats(pas)
+    const pitching = pitcherStats(pas)
+    const r9 = batting.pa > 0 ? +((runsScored * 9) / batting.pa).toFixed(2) : 0
     return reply.send({
-      batter,
-      pitcher,
-      batting: batterStats(pas),
-      runs: Number(runs?.count ?? 0),
+      batter, pitcher,
+      batting, pitching,
+      runs: runsScored, r9,
+      era: era(runsScored, pitching.outs),
       log: pas,
     })
   })
@@ -166,11 +180,16 @@ const stats: FastifyPluginAsync = async (fastify) => {
       const batterPas = allPas.filter((p) => p.batter_id === player.id)
       const pitcherPas = allPas.filter((p) => p.pitcher_id === player.id)
       const runsCount = allRuns.filter((r) => r.scorer_id === player.id).length
+      const pitcherPaIds = new Set(pitcherPas.map((p) => p.id))
+      const runsAllowed = allRuns.filter((r) => pitcherPaIds.has(r.driven_in_by_pa_id)).length
+      const batting = batterStats(batterPas)
+      const pitching = pitcherStats(pitcherPas)
+      const r9 = batting.pa > 0 ? +((runsCount * 9) / batting.pa).toFixed(2) : 0
 
       return {
         player,
-        batting: batterStats(batterPas),
-        pitching: pitcherStats(pitcherPas),
+        batting, r9,
+        pitching, runsAllowed, era: era(runsAllowed, pitching.outs),
         runs: runsCount,
       }
     })
