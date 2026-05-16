@@ -460,7 +460,7 @@ function vNewGame() {
     <div class="pg">
       <div class="card">
         <div class="card-label">Game Label (optional)</div>
-        <input type="text" id="glabel" placeholder="e.g. Memorial Day 2026" value="${S.ngLabel}">
+        <input type="text" id="glabel" placeholder="e.g. Memorial Day 2026" value="${S.ngLabel}" oninput="S.ngLabel=this.value">
       </div>
       <div class="sec-hdr">Select Players (pick ≥ 2)</div>
       ${S.players.length
